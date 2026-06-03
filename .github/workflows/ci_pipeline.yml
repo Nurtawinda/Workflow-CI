@@ -52,7 +52,7 @@ jobs:
     # 6. Bangun Docker Image
     - name: Build Docker Image via MLflow Function
       run: |
-        mlflow models build-docker -m "MLProject/model" -n "${{ secrets.DOCKERHUB_USERNAME }}/credit-risk-model:latest" --env-manager=local
+        mlflow models build-docker -m "mlruns/0/${{ github.run_id }}
 
     # 7. Unggah (Push) Docker Image yang sudah jadi ke Docker Hub Cloud
     - name: Push Docker Image to Docker Hub

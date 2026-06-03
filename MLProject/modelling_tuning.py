@@ -10,7 +10,7 @@ mlflow.set_tracking_uri("http://127.0.0.1:5000/")
 # Create a new MLflow Experiment
 mlflow.set_experiment("SML Winda")
 
-data = pd.read_csv(r"D:\winda's Project\Belajar Dicoding\Pijak By Dicoding\Submission\Workflow-CI\MLProject\credit_risk_dataset_preprocessing.csv")
+data = pd.read_csv(r"D:\winda's Project\Belajar Dicoding\Pijak By Dicoding\Submission\MSML\Workflow-CI\MLProject\credit_risk_dataset_preprocessing.csv")
 
 X_train, X_test, y_train, y_test = train_test_split(
     data.drop("loan_status", axis=1),

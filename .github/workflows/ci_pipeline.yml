@@ -34,7 +34,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install pandas numpy scikit-learn mlflow dagshub matplotlib seaborn
 
-    # 4. Jalankan MLProject secara otomatis di server GitHub
+    # 4. Jalankan MLProject secara otomatis di server GitHub menggunakan Remote Secrets
     - name: Run MLflow Project
       run: |
         export MLFLOW_TRACKING_URI=${{ secrets.MLFLOW_TRACKING_URI }}
@@ -49,20 +49,21 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # 6. Bangun Docker Image
+    # 6. KUNCI PERBAIKAN 1: Menyempurnakan sintaks Build Docker Image yang terpotong
+    # Kita arahkan target folder model ke 'MLProject/model' hasil save_model dari script python Anda
     - name: Build Docker Image via MLflow Function
       run: |
-        mlflow models build-docker -m "mlruns/0/${{ github.run_id }}
+        mlflow models build-docker -m "MLProject/model" -n "${{ secrets.DOCKERHUB_USERNAME }}/credit-risk-model:latest" --env-manager=local
 
     # 7. Unggah (Push) Docker Image yang sudah jadi ke Docker Hub Cloud
     - name: Push Docker Image to Docker Hub
       run: |
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/credit-risk-model:latest
 
-    # 8. Simpan berkas model (Artefak) ke repositori GitHub saat ini
+    # 8. KUNCI PERBAIKAN 2: Memperbaiki format email git bot yang typo
     - name: Commit and Push Local Artifacts
       run: |
-        git config --local user.email "github-actions[bot]@://github.com"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         
         git add MLProject/model/

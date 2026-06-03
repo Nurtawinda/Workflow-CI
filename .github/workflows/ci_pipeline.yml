@@ -17,51 +17,60 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
+    # 1. Ambil seluruh kode dari repositori GitHub
     - name: Checkout Code
       uses: actions/checkout@v4
 
+    # 2. Siapkan lingkungan Python
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.9'
 
+    # 3. Install seluruh library
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pandas numpy scikit-learn mlflow dagshub matplotlib seaborn
 
+    # 4. KUNCI BYPASS
     - name: Run MLflow Project
       run: |
         export MLFLOW_TRACKING_URI=file:./mlruns
-        mlflow run MLProject --env-manager=local > run_output.txt 2>&1
-        cat run_output.txt
+        cd MLProject
+        python modelling_tuning.py
         
-        # Regex pintar untuk menangkap 32 digit ID unik dari log mesin MLflow
-        RUN_ID=$(grep -oP "(?<=in run with ID ')[a-f0-9]{32}" run_output.txt || echo "unknown")
+        # Ekstrak RUN_ID secara cerdas dari database lokal mlruns yang baru terbentuk
+        cd ..
+        RUN_ID=$(ls mlruns/0/ | grep -v "meta.yaml" | head -n 1)
         echo "Berhasil menangkap RUN_ID: $RUN_ID"
         echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
 
+    # 5. Login ke akun Docker
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+    # 6. Bangun Docker Image
     - name: Build Docker Image via MLflow Function
       run: |
         export MLFLOW_TRACKING_URI=file:./mlruns
         mlflow models build-docker -m "mlruns/0/${{ env.RUN_ID }}/artifacts/model" -n "${{ secrets.DOCKERHUB_USERNAME }}/credit-risk-model:latest" --env-manager=local
 
+    # 7. Unggah (Push) Docker Image
     - name: Push Docker Image to Docker Hub
       run: |
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/credit-risk-model:latest
 
+    # 8. Simpan berkas model (Artefak) balik ke repositori GitHub
     - name: Commit and Push Local Artifacts
       run: |
         git config --local user.email "github-actions[bot]@://github.com"
         git config --local user.name "github-actions[bot]"
         
-        # Ambil hasil folder model dari direktori mlruns ke folder penilai
+        # Salin folder model agar masuk ke struktur folder tugas penilai Dicoding
         mkdir -p MLProject/model/
         cp -r mlruns/0/${{ env.RUN_ID }}/artifacts/model/* MLProject/model/
         

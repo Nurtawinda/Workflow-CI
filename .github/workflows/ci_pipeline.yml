@@ -30,11 +30,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install pandas numpy scikit-learn mlflow dagshub matplotlib seaborn
 
-    # 4. KUNCI PERBAIKAN 1: Paksa pelacakan berjalan 100% lokal di server Linux GitHub Actions
-    # Ini menjamin langkah ini bebas dari error 404/403 API DagsHub
+    # 4. Jalankan MLProject secara otomatis di server GitHub
     - name: Run MLflow Project
       run: |
-        export MLFLOW_TRACKING_URI=file:./mlruns
+        export MLFLOW_TRACKING_URI=${{ secrets.MLFLOW_TRACKING_URI }}
+        export MLFLOW_TRACKING_USERNAME=${{ secrets.MLFLOW_TRACKING_USERNAME }}
+        export MLFLOW_TRACKING_PASSWORD=${{ secrets.MLFLOW_TRACKING_PASSWORD }}
         mlflow run MLProject --env-manager=local
 
     # 5. Login ke akun Docker Hub Anda via Secrets
@@ -44,7 +45,7 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # 6. KUNCI PERBAIKAN 2: Ambil folder model hasil keluaran lokal untuk dibungkus menjadi Docker
+    # 6. Bangun Docker Image
     - name: Build Docker Image via MLflow Function
       run: |
         mlflow models build-docker -m "MLProject/model" -n "${{ secrets.DOCKERHUB_USERNAME }}/credit-risk-model:latest" --env-manager=local
@@ -54,10 +55,10 @@ jobs:
       run: |
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/credit-risk-model:latest
 
-    # 8. Simpan berkas model (Artefak) ke repositori GitHub saat ini
+    # 8. KUNCI PERBAIKAN 2: Memperbaiki format email git bot yang typo
     - name: Commit and Push Local Artifacts
       run: |
-        git config --local user.email "github-actions[bot]@://github.com"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         
         git add MLProject/model/

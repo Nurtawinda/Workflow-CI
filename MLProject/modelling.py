@@ -43,7 +43,7 @@ if __name__ == "__main__":
     input_example = X_train[0:5]
     
     # 3. Proses Training Model
-    with mlflow.start_run(run_name=f"MLProject_est_{n_estimators}_depth_{max_depth}"):
+    with mlflow.start_run(run_name=f"MLProject_est_{n_estimators}_depth_{max_depth}", nested=True):
         mlflow.autolog(disable=True)
 
         model = RandomForestClassifier(n_estimators=n_estimators, max_depth=max_depth, n_jobs=-1, random_state=42)

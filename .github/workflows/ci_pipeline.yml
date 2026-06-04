@@ -24,37 +24,37 @@ jobs:
       with:
         python-version: '3.9'
 
-    # 3. Install seluruh library yang dibutuhkan
+    # 3. Install seluruh library yang dibutuhkan 
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pandas numpy scikit-learn mlflow dagshub matplotlib seaborn
 
-    # 4. Jalankan pelatihan model secara lokal di server CI
+    # 4. Jalankan pelatihan model menggunakan mekanisme MLflow Project
     - name: Run MLflow Project
       run: |
         export MLFLOW_TRACKING_URI=file:./mlruns
         cd MLProject
-        python -u modelling.py
+        mlflow run . --no-conda
 
-    # 5. Otentikasi masuk ke akun Docker
+    # 5. Otentikasi masuk ke akun Docker Hub
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # 6. Bangun Docker Image 
+    # 6. Bangun Docker Image menggunakan Dockerfile standar industri
     - name: Build Docker Image via Dockerfile
       run: |
         docker build -t "${{ secrets.DOCKERHUB_USERNAME }}/credit-risk-model:latest" ./MLProject
 
-    # 7. Unggah Docker Image
+    # 7. Unggah Docker Image yang sudah jadi ke Docker Hub Cloud
     - name: Push Docker Image to Docker Hub
       run: |
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/credit-risk-model:latest
 
-    # 8. GitHub Artifacts 
+    # 8. Gunakan GitHub Artifacts
     - name: Upload Model Artifact to GitHub Web
       uses: actions/upload-artifact@v4
       with:

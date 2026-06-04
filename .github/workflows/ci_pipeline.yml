@@ -35,7 +35,7 @@ jobs:
       run: |
         export MLFLOW_TRACKING_URI=file:./mlruns
         cd MLProject
-        mlflow run . --no-conda
+        mlflow run . --env-manager local
 
     # 5. Otentikasi masuk ke akun Docker Hub
     - name: Login to Docker Hub

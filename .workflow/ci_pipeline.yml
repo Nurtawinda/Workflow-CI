@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Ambil kode dari repositori
+    # 1. Ambil seluruh kode dari repositori GitHub
     - name: Checkout Code
       uses: actions/checkout@v4
 
@@ -24,53 +24,39 @@ jobs:
       with:
         python-version: '3.9'
 
-    # 3. Install seluruh library yang dibutuhkan proyek
+    # 3. Install seluruh library yang dibutuhkan 
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install pandas numpy scikit-learn mlflow dagshub matplotlib seaborn
 
-    # 4. Jalankan model via trigger & buat database log lokal
+    # 4. Jalankan pelatihan model secara lokal di server CI
     - name: Run MLflow Project
       run: |
         export MLFLOW_TRACKING_URI=file:./mlruns
         cd MLProject
         python -u modelling.py
-        
-        # Ekstrak ID run yang baru saja terbentuk secara dinamis
-        cd ..
-        RUN_ID=$(ls mlruns/0/ | grep -v "meta.yaml" | head -n 1)
-        echo "Berhasil menangkap RUN_ID: $RUN_ID"
-        echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
 
-    # 5. Otentikasi masuk ke akun Docker
+    # 5. Otentikasi masuk ke akun Docker Hub
     - name: Login to Docker Hub
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # 6. Bangun Docker Image menggunakan fungsi resmi mlflow models build-docker
-    - name: Build Docker Image via MLflow Function
+    # 6. Bangun Docker Image menggunakan Dockerfile standar industri
+    - name: Build Docker Image via Dockerfile
       run: |
-        export MLFLOW_TRACKING_URI=file:./mlruns
-        mlflow models build-docker -m "MLProject/model" -n "${{ secrets.DOCKERHUB_USERNAME }}/credit-risk-model:latest" --env-manager=local
+        docker build -t "${{ secrets.DOCKERHUB_USERNAME }}/credit-risk-model:latest" ./MLProject
 
-    # 7. Unggah (Push) Docker Image yang sudah jadi ke Docker Hub Cloud
+    # 7. Unggah Docker Image yang sudah jadi ke Docker Hub Cloud
     - name: Push Docker Image to Docker Hub
       run: |
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/credit-risk-model:latest
 
-    # 8. Simpan berkas model (Artefak) balik ke repositori GitHub yang sama secara otomatis
-    - name: Commit and Push Local Artifacts
-      run: |
-        git config --local user.email "github-actions[bot]@://github.com"
-        git config --local user.name "github-actions[bot]"
-        
-        git add MLProject/model/
-        if [ -n "$(git status --porcelain)" ]; then
-          git commit -m "Automated CI: Update local model artifact [skip ci]"
-          git push
-        else
-          echo "Tidak ada perubahan artefak yang perlu disimpan."
-        fi
+    # 8. Gunakan GitHub Artifacts
+    - name: Upload Model Artifact to GitHub Web
+      uses: actions/upload-artifact@v4
+      with:
+        name: trained-model
+        path: MLProject/model/

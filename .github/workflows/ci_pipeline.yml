@@ -35,8 +35,6 @@ jobs:
       run: |
         export MLFLOW_TRACKING_URI=file:./mlruns
         cd MLProject
-        # Mengosongkan MLFLOW_RUN_ID mencegah bentrok active run ID saat mlflow run dieksekusi
-        unset MLFLOW_RUN_ID
         mlflow run . --env-manager=local
 
     # 5. Otentikasi masuk ke akun Docker Hub

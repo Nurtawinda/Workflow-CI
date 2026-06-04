@@ -30,12 +30,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install pandas numpy scikit-learn mlflow dagshub matplotlib seaborn
 
-    # 4. Jalankan pelatihan model secara lokal di server CI
+    # 4. Jalankan pelatihan model menggunakan mekanisme MLflow Project
     - name: Run MLflow Project
       run: |
         export MLFLOW_TRACKING_URI=file:./mlruns
         cd MLProject
-        python -u modelling.py
+        mlflow run . --no-conda
 
     # 5. Otentikasi masuk ke akun Docker Hub
     - name: Login to Docker Hub
